@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Panel de Control</h1>
+    
+    <div class="row">
+        <!-- Control de Cámaras -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-video fa-3x mb-3 text-primary"></i>
+                    <h5 class="card-title">Control de Cámaras</h5>
+                    <p class="card-text">Administre y monitoree las cámaras del sistema de detección de residuos.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('cameras') }}" class="btn btn-primary btn-lg">
+                            Administrar Cámaras
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detección de Residuos -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-search fa-3x mb-3 text-success"></i>
+                    <h5 class="card-title">Detección de Residuos</h5>
+                    <p class="card-text">Visualice y analice en tiempo real la detección de residuos del sistema.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('detection') }}" class="btn btn-success btn-lg">
+                            Ver Detecciones
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Análisis y Estadísticas -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-chart-bar fa-3x mb-3 text-info"></i>
+                    <h5 class="card-title">Análisis y Estadísticas</h5>
+                    <p class="card-text">Acceda a reportes detallados y estadísticas del sistema de detección.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('analysis') }}" class="btn btn-info btn-lg">
+                            Ver Estadísticas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Configuración -->
+        <div class="col-md-6 mb-4">
+            <div class="card h-100">
+                <div class="card-body text-center">
+                    <i class="fas fa-cog fa-3x mb-3 text-secondary"></i>
+                    <h5 class="card-title">Configuración</h5>
+                    <p class="card-text">Configure los parámetros y ajustes del sistema de detección.</p>
+                    <div class="mt-4">
+                        <a href="{{ url_for('config') }}" class="btn btn-secondary btn-lg">
+                            Configurar Sistema
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}

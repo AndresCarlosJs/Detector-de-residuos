@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Configuración del Sistema{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Configuración del Sistema</h1>
+
+    <!-- Configuración de Detección -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configuración de Detección</h5>
+        </div>
+        <div class="card-body">
+            <form id="detection-config-form" class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="confidence-threshold" class="form-label">Umbral de Confianza</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="confidence-threshold" 
+                                   name="confidence_threshold" min="0" max="1" step="0.1" 
+                                   value="{{ config.confidence_threshold }}" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">Nivel mínimo de confianza para considerar una detección válida.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="detection-interval" class="form-label">Intervalo de Detección</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="detection-interval" 
+                                   name="detection_interval" min="1" max="60" 
+                                   value="{{ config.detection_interval }}" required>
+                            <span class="input-group-text">segundos</span>
+                        </div>
+                        <div class="form-text">Tiempo entre cada detección.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Configuración de Detección</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuración de Cámaras -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configuración de Cámaras</h5>
+        </div>
+        <div class="card-body">
+            <form id="camera-config-form" class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="resolution" class="form-label">Resolución</label>
+                        <select class="form-select" id="resolution" name="resolution" required>
+                            <option value="640x480" {% if config.resolution == '640x480' %}selected{% endif %}>640x480</option>
+                            <option value="1280x720" {% if config.resolution == '1280x720' %}selected{% endif %}>1280x720</option>
+                            <option value="1920x1080" {% if config.resolution == '1920x1080' %}selected{% endif %}>1920x1080</option>
+                        </select>
+                        <div class="form-text">Resolución de captura de las cámaras.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="fps" class="form-label">Cuadros por Segundo</label>
+                        <input type="number" class="form-control" id="fps" name="fps" 
+                               min="1" max="60" value="{{ config.fps }}" required>
+                        <div class="form-text">FPS para la captura de video.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Configuración de Cámaras</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuración de Notificaciones -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configuración de Notificaciones</h5>
+        </div>
+        <div class="card-body">
+            <form id="notification-config-form" class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="enable-notifications" 
+                                   name="enable_notifications" {% if config.enable_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="enable-notifications">Activar Notificaciones</label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="notification-email" class="form-label">Correo Electrónico</label>
+                        <input type="email" class="form-control" id="notification-email" 
+                               name="notification_email" value="{{ config.notification_email }}">
+                        <div class="form-text">Correo para recibir notificaciones.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Configuración de Notificaciones</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Configuración del Sistema -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="card-title mb-0">Configuración del Sistema</h5>
+        </div>
+        <div class="card-body">
+            <form id="system-config-form" class="needs-validation" novalidate>
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="storage-days" class="form-label">Retención de Datos</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="storage-days" 
+                                   name="storage_days" min="1" max="365" 
+                                   value="{{ config.storage_days }}" required>
+                            <span class="input-group-text">días</span>
+                        </div>
+                        <div class="form-text">Días que se mantienen los datos históricos.</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="backup-frequency" class="form-label">Frecuencia de Respaldo</label>
+                        <select class="form-select" id="backup-frequency" name="backup_frequency" required>
+                            <option value="daily" {% if config.backup_frequency == 'daily' %}selected{% endif %}>Diario</option>
+                            <option value="weekly" {% if config.backup_frequency == 'weekly' %}selected{% endif %}>Semanal</option>
+                            <option value="monthly" {% if config.backup_frequency == 'monthly' %}selected{% endif %}>Mensual</option>
+                        </select>
+                        <div class="form-text">Frecuencia de respaldo automático.</div>
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar Configuración del Sistema</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Función para mostrar alertas
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.role = 'alert';
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    `;
+    
+    // Remover alertas anteriores
+    document.querySelectorAll('.alert').forEach(alert => alert.remove());
+    
+    // Insertar la nueva alerta al principio del contenedor
+    document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+    
+    // Auto-ocultar después de 5 segundos
+    setTimeout(() => {
+        alertDiv.classList.remove('show');
+        setTimeout(() => alertDiv.remove(), 150);
+    }, 5000);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Validación de formularios
+    const forms = document.querySelectorAll('.needs-validation');
+    Array.from(forms).forEach(form => {
+        form.addEventListener('submit', function(event) {
+            event.preventDefault();
+            if (!form.checkValidity()) {
+                event.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+
+            // Obtener los datos del formulario
+            const formData = new FormData(form);
+            const data = Object.fromEntries(formData.entries());
+
+            // Enviar datos al servidor
+            fetch('/api/config/' + form.id.replace('-form', ''), {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => response.json().then(data => ({status: response.status, body: data})))
+            .then(({status, body}) => {
+                if (body.success) {
+                    showAlert('success', body.message || 'Configuración guardada exitosamente');
+                } else {
+                    showAlert('danger', body.error || 'Error desconocido al guardar la configuración');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('danger', 'Error al comunicarse con el servidor');
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

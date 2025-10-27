@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Cámaras{% endblock %}
+
+{% block head %}
+<style>
+    .camera-view {
+        position: relative;
+        overflow: hidden;
+        border-radius: 8px;
+    }
+    .camera-stream {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .camera-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Control de Cámaras</h1>
+    
+    <div class="alert alert-primary alert-dismissible fade show" role="alert">
+        <h5><i class="fas fa-info-circle"></i> Permisos de cámara requeridos</h5>
+        <p>Para usar esta función, necesitas permitir el acceso a la cámara en tu navegador. Si ves un mensaje solicitando permisos, haz clic en "Permitir".</p>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Vista de Cámaras</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="camera-grid">
+                        <!-- Contenedor para las vistas de cámara -->
+                        <div class="col-md-6 mb-3">
+                            <div class="camera-view bg-dark text-white p-2 text-center">
+                                <h6>Cámara 1</h6>
+                                <div id="camera-1-placeholder" class="camera-placeholder" style="height: 200px; background-color: #2c3e50;">
+                                    <span class="align-middle">Sin señal</span>
+                                </div>
+                                <img id="camera-1-stream" class="camera-stream" style="display: none; width: 100%; height: 200px; object-fit: contain;" alt="Stream de cámara 1">
+                                <div class="camera-status mt-2">
+                                    <small class="text-muted">Estado: <span id="camera-1-status">Desconectada</span></small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="camera-view bg-dark text-white p-2 text-center">
+                                <h6>Cámara 2</h6>
+                                <div id="camera-2-placeholder" class="camera-placeholder" style="height: 200px; background-color: #2c3e50;">
+                                    <span class="align-middle">Sin señal</span>
+                                </div>
+                                <img id="camera-2-stream" class="camera-stream" style="display: none; width: 100%; height: 200px; object-fit: contain;" alt="Stream de cámara 2">
+                                <div class="camera-status mt-2">
+                                    <small class="text-muted">Estado: <span id="camera-2-status">Desconectada</span></small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Control de Cámaras</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="camera-select" class="form-label">Seleccionar Cámara</label>
+                        <div class="input-group">
+                            <select class="form-select" id="camera-select">
+                                <option value="">Cargando cámaras...</option>
+                            </select>
+                            <button class="btn btn-outline-secondary" type="button" id="refresh-cameras" title="Actualizar lista de cámaras">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Se mostrarán las cámaras disponibles (integrada y USB)</small>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" id="start-camera">Iniciar Cámara</button>
+                        <button class="btn btn-danger" id="stop-camera">Detener Cámara</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Estado del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Cámaras Activas
+                            <span class="badge bg-primary rounded-pill">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Estado del Sistema
+                            <span class="badge bg-success rounded-pill">Activo</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

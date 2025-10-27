@@ -1,0 +1,67 @@
+/* Estilos personalizados */
+body {
+    background-color: #f8f9fa;
+}
+
+.card {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    margin-bottom: 1.5rem;
+}
+
+.navbar {
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.alert {
+    margin-bottom: 2rem;
+}
+
+/* Estilos para las vistas de cámara */
+.camera-view, .detection-view {
+    border-radius: 0.25rem;
+    overflow: hidden;
+}
+
+.camera-placeholder, .detection-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Estilos para los controles */
+.form-range::-webkit-slider-thumb {
+    background: #0d6efd;
+}
+
+.form-range::-webkit-slider-runnable-track {
+    background: #dee2e6;
+}
+
+/* Animaciones para los badges */
+.badge {
+    transition: all 0.3s ease;
+}
+
+/* Estilos para la tabla de detecciones */
+.table {
+    margin-bottom: 0;
+}
+
+.table thead th {
+    border-top: none;
+    background-color: #f8f9fa;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .camera-placeholder {
+        height: 150px !important;
+    }
+    
+    .detection-placeholder {
+        height: 300px !important;
+    }
+}

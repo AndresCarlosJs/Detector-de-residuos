@@ -1,0 +1,186 @@
+{% extends "base.html" %}
+
+{% block title %}Análisis y Estadísticas{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Análisis y Estadísticas</h1>
+
+    <!-- Resumen de Detecciones -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">Total Detecciones</h5>
+                    <h2 class="display-4" id="total-detections">{{ stats.total }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">Residuos Orgánicos</h5>
+                    <h2 class="display-4" id="organic-detections">{{ stats.organic }}</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">Residuos Inorgánicos</h5>
+                    <h2 class="display-4" id="inorganic-detections">{{ stats.inorganic }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Detecciones por Día</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="detections-chart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Distribución de Residuos</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="waste-distribution-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tiempo Activo -->
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Tiempo Activo del Sistema</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="active-time-chart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Datos de ejemplo para los gráficos
+const dailyStats = {{ daily_stats|tojson }};
+
+// Gráfico de Detecciones por Día
+const detectionsChart = new Chart(
+    document.getElementById('detections-chart'),
+    {
+        type: 'line',
+        data: {
+            labels: dailyStats.dates,
+            datasets: [
+                {
+                    label: 'Total',
+                    data: dailyStats.total,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Orgánicos',
+                    data: dailyStats.organic,
+                    borderColor: 'rgb(75, 192, 75)',
+                    tension: 0.1
+                },
+                {
+                    label: 'Inorgánicos',
+                    data: dailyStats.inorganic,
+                    borderColor: 'rgb(255, 205, 86)',
+                    tension: 0.1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    }
+);
+
+// Gráfico de Distribución de Residuos
+const wasteDistributionChart = new Chart(
+    document.getElementById('waste-distribution-chart'),
+    {
+        type: 'doughnut',
+        data: {
+            labels: ['Orgánicos', 'Inorgánicos'],
+            datasets: [{
+                data: [{{ stats.organic }}, {{ stats.inorganic }}],
+                backgroundColor: [
+                    'rgb(75, 192, 75)',
+                    'rgb(255, 205, 86)'
+                ]
+            }]
+        }
+    }
+);
+
+// Gráfico de Tiempo Activo
+const activeTimeChart = new Chart(
+    document.getElementById('active-time-chart'),
+    {
+        type: 'bar',
+        data: {
+            labels: dailyStats.dates,
+            datasets: [{
+                label: 'Horas Activas',
+                data: dailyStats.active_time,
+                backgroundColor: 'rgb(54, 162, 235)'
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                }
+            }
+        }
+    }
+);
+
+// Actualización automática cada 5 minutos
+setInterval(() => {
+    fetch('/api/stats/daily')
+        .then(response => response.json())
+        .then(data => {
+            // Actualizar gráficos con nuevos datos
+            detectionsChart.data.labels = data.dates;
+            detectionsChart.data.datasets[0].data = data.total;
+            detectionsChart.data.datasets[1].data = data.organic;
+            detectionsChart.data.datasets[2].data = data.inorganic;
+            detectionsChart.update();
+
+            activeTimeChart.data.labels = data.dates;
+            activeTimeChart.data.datasets[0].data = data.active_time;
+            activeTimeChart.update();
+
+            // Actualizar distribución
+            wasteDistributionChart.data.datasets[0].data = [data.organic[data.organic.length-1], data.inorganic[data.inorganic.length-1]];
+            wasteDistributionChart.update();
+        });
+}, 300000);
+</script>
+{% endblock %}
