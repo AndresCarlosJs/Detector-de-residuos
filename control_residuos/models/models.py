@@ -7,9 +7,10 @@ import json
 db = SQLAlchemy()
 
 class User(UserMixin, db.Model):
+    __tablename__ = 'users'  # Especificar nombre de tabla
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(80), unique=True, nullable=False)
-    password_hash = db.Column(db.String(120), nullable=False)
+    password_hash = db.Column(db.String(255), nullable=False)  # Aumentado a 255 para hash más largo
     role = db.Column(db.String(20), default='user')
 
     def set_password(self, password):

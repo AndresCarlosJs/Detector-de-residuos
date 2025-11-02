@@ -1,1 +1,11 @@
- 
+# Archivo principal de requisitos
+# Instalar en el siguiente orden:
+
+# 1. Requisitos base (Web, DB, Utilidades)
+-r requirements/base.txt
+
+# 2. Machine Learning y Computer Vision
+-r requirements/ml.txt
+
+# 3. Desarrollo y Testing (opcional para producción)
+-r requirements/dev.txt

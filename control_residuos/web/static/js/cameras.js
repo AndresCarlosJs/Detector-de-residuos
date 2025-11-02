@@ -107,6 +107,8 @@ async function loadAvailableCameras() {
     // Mostrar mensaje de búsqueda con animación
     cameraSelect.innerHTML = '<option value="">⌛ Buscando cámaras...</option>';
     cameraSelect.disabled = true;
+    
+    console.log('Iniciando búsqueda de cámaras...'); // Debug log
     showMessage('Buscando cámaras disponibles...', 'info');
 
     try {
@@ -195,18 +197,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const data = await response.json();
             
             if (data.success) {
-                // Mostrar el stream
-                const placeholder = document.getElementById(`camera-${cameraId}-placeholder`);
-                const stream = document.getElementById(`camera-${cameraId}-stream`);
+                // Encontrar el siguiente slot de cámara disponible
+                let slotId = 1;
+                while (document.getElementById(`camera-${slotId}-stream`).style.display === 'block' && slotId <= 2) {
+                    slotId++;
+                }
+                
+                if (slotId > 2) {
+                    showMessage('No hay slots disponibles. Detén una cámara antes de iniciar otra.', 'warning');
+                    return;
+                }
+                
+                // Mostrar el stream en el slot encontrado
+                const placeholder = document.getElementById(`camera-${slotId}-placeholder`);
+                const stream = document.getElementById(`camera-${slotId}-stream`);
                 
                 if (placeholder && stream) {
                     // Primero configurar los eventos
                     stream.onload = function() {
-                        console.log('Stream cargado correctamente');
+                        console.log('Stream cargado correctamente en slot ' + slotId);
                         placeholder.style.display = 'none';
                         stream.style.display = 'block';
                         retryCount = 0;
-                        document.getElementById(`camera-${cameraId}-status`).textContent = 'Conectada';
+                        document.getElementById(`camera-${slotId}-status`).textContent = 'Conectada';
                     };
                     
                     stream.onerror = function() {
@@ -214,25 +227,25 @@ document.addEventListener('DOMContentLoaded', function() {
                         showMessage('Error al cargar el stream de la cámara. Intentando reconectar...', 'warning');
                         stream.style.display = 'none';
                         placeholder.style.display = 'flex';
-                        document.getElementById(`camera-${cameraId}-status`).textContent = 'Error';
+                        document.getElementById(`camera-${slotId}-status`).textContent = 'Error';
                         
                         if (retryCount < maxRetries) {
                             retryCount++;
                             console.log(`Reintento ${retryCount} de ${maxRetries}`);
                             setTimeout(() => {
                                 console.log('Reintentando conexión...');
-                                stream.src = `/api/camera/${cameraId}/stream?retry=${retryCount}&t=${new Date().getTime()}`;
+                                stream.src = `/api/camera/${cameraId}/feed?retry=${retryCount}&t=${new Date().getTime()}`;
                             }, 2000);
                         } else {
                             showMessage('No se pudo establecer la conexión con la cámara después de varios intentos.', 'danger');
-                            document.getElementById(`camera-${cameraId}-status`).textContent = 'Desconectada';
+                            document.getElementById(`camera-${slotId}-status`).textContent = 'Desconectada';
                         }
                     };
                     
                     // Luego intentar cargar el stream
-                    console.log('Intentando cargar stream de cámara...');
-                    stream.src = `/api/camera/${cameraId}/stream?t=${new Date().getTime()}`;
-                    activeCamera = cameraId;
+                    console.log(`Intentando cargar stream de cámara ${cameraId} en slot ${slotId}...`);
+                    stream.src = `/api/camera/${cameraId}/feed?t=${new Date().getTime()}`;
+                    activeCamera = {id: cameraId, slot: slotId};
                     showMessage('Cámara iniciada exitosamente', 'success');
                 }
             } else {
@@ -251,20 +264,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (activeCamera !== null) {
             try {
                 // Detener la cámara
-                const response = await fetch(`/api/camera/${activeCamera}/stop`, {
+                const response = await fetch(`/api/camera/${activeCamera.id}/stop`, {
                     method: 'POST'
                 });
                 const data = await response.json();
                 
                 if (data.success) {
                     // Ocultar el stream
-                    const placeholder = document.getElementById(`camera-${activeCamera}-placeholder`);
-                    const stream = document.getElementById(`camera-${activeCamera}-stream`);
+                    const placeholder = document.getElementById(`camera-${activeCamera.slot}-placeholder`);
+                    const stream = document.getElementById(`camera-${activeCamera.slot}-stream`);
                     
                     if (placeholder && stream) {
                         placeholder.style.display = 'flex';
                         stream.style.display = 'none';
                         stream.src = '';
+                        document.getElementById(`camera-${activeCamera.slot}-status`).textContent = 'Desconectada';
                     }
                     activeCamera = null;
                 }

@@ -2,6 +2,41 @@
 
 {% block title %}Detección de Residuos{% endblock %}
 
+{% block head %}
+{{ super() }}
+<style>
+    .detection-view {
+        position: relative;
+        background: #2c3e50;
+        min-height: 400px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    
+    .detection-view img {
+        max-width: 100%;
+        max-height: 100%;
+    }
+    
+    .detection-stats {
+        font-size: 0.9rem;
+    }
+    
+    .detection-controls {
+        position: absolute;
+        bottom: 1rem;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        background: rgba(0, 0, 0, 0.5);
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <h1 class="mb-4">Detección de Residuos</h1>
@@ -12,18 +47,25 @@
                 <div class="card-header">
                     <h5 class="card-title mb-0">Vista en Tiempo Real</h5>
                 </div>
-                <div class="card-body">
-                    <div class="detection-view bg-dark text-white p-2 text-center">
-                        <div class="detection-placeholder" style="height: 400px; background-color: #2c3e50;">
-                            <span class="align-middle">Vista de Detección</span>
+                <div class="card-body p-0">
+                    <div class="detection-view bg-dark text-white">
+                        <div id="camera-view" class="position-relative" style="min-height: 400px;">
+                            <img id="detection-stream" class="w-100 h-100 d-none" style="object-fit: contain;" alt="Stream de detección">
+                            <div id="detection-placeholder" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center">
+                                <span class="text-light">Vista de Detección</span>
+                            </div>
+                            <div id="detection-overlay" class="position-absolute top-0 start-0 w-100 h-100">
+                                <!-- Aquí se mostrarán las detecciones -->
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="card">
-                <div class="card-header">
+                <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="card-title mb-0">Detecciones Recientes</h5>
+                    <span class="badge bg-secondary" id="detection-rate">0 det/s</span>
                 </div>
                 <div class="card-body">
                     <div class="table-responsive">
@@ -36,7 +78,7 @@
                                     <th>Confianza</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="recent-detections">
                                 <tr>
                                     <td colspan="4" class="text-center">No hay detecciones recientes</td>
                                 </tr>
@@ -62,10 +104,10 @@
                     </div>
                     <div class="mb-3">
                         <label for="confidence-threshold" class="form-label">
-                            Umbral de Confianza: <span id="confidence-value">0.5</span>
+                            Umbral de Confianza: <span id="confidence-value">0.3</span>
                         </label>
                         <input type="range" class="form-range" id="confidence-threshold" 
-                               min="0" max="1" step="0.1" value="0.5">
+                               min="0" max="1" step="0.1" value="0.3">
                     </div>
                     <div class="d-grid gap-2">
                         <button class="btn btn-primary" id="start-detection">Iniciar Detección</button>
@@ -82,15 +124,34 @@
                     <ul class="list-group">
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Total Detecciones
-                            <span class="badge bg-primary rounded-pill">0</span>
+                            <span class="badge bg-primary rounded-pill" data-stat="total">0</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Residuos Orgánicos
-                            <span class="badge bg-success rounded-pill">0</span>
+                            <span class="badge bg-success rounded-pill" data-stat="organic">0</span>
                         </li>
                         <li class="list-group-item d-flex justify-content-between align-items-center">
                             Residuos Inorgánicos
-                            <span class="badge bg-warning rounded-pill">0</span>
+                            <span class="badge bg-warning rounded-pill" data-stat="inorganic">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Rendimiento -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Rendimiento</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            FPS
+                            <span class="badge bg-info rounded-pill" id="detection-fps">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Tiempo de Proceso
+                            <span class="badge bg-secondary rounded-pill" id="process-time">0 ms</span>
                         </li>
                     </ul>
                 </div>
@@ -99,10 +160,6 @@
     </div>
 </div>
 
-<script>
-    // Actualizar el valor mostrado del umbral de confianza
-    document.getElementById('confidence-threshold').addEventListener('input', function(e) {
-        document.getElementById('confidence-value').textContent = e.target.value;
-    });
-</script>
+<!-- Scripts -->
+<script src="{{ url_for('static', filename='js/detection.js') }}"></script>
 {% endblock %}
