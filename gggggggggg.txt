@@ -1,0 +1,135 @@
+
+
+1) Configuración central
+- `control_residuos/settings.py`
+`control_residuos/settings.py`
+  - Ruta: ./control_residuos/settings.py
+  - Por qué: archivo de configuración central (DB, rutas de modelos YOLO, parámetros de cámara y servidor).
+  - Contenido clave: constantes (SQLALCHEMY_DATABASE_URI, YOLO_MODEL_PATH, CAMERA_WIDTH/HEIGHT/FPS, SECRET_KEY).
+  - Qué hace el código: define variables globales usadas por Flask y por los módulos (p.ej. `YOLO_MODEL_PATH` se usa para cargar pesos; `SQLALCHEMY_DATABASE_URI` para conectar a PostgreSQL). Sirve como único punto para ajustar parámetros del sistema.
+
+2) Gestión de la base de datos
+- `control_residuos/db_admin.py`
+  - Ruta: ./control_residuos/db_admin.py
+  - Por qué: script para inicializar/reiniciar la BD y cargar datos de ejemplo.
+  - Contenido clave: funciones `init_db()`, `reset_db()`, `load_sample_data()` que usan `models.models` y `db`.
+  - Qué hace el código: crea tablas con `db.create_all()`, crea usuario `admin` si no existe, inserta `SystemConfig` por defecto y ofrece comandos CLI (`init`, `reset`, `sample`). Útil para preparar el sistema sin tocar código.
+
+- `control_residuos/models/models.py`
+  - Ruta: ./control_residuos/models/models.py
+  - Por qué: define el esquema en PostgreSQL (usuarios, cámaras, detecciones, config).
+  - Contenido clave: clases `User`, `Camera`, `Detection`, `SystemConfig` y métodos auxiliares (ej. `set_password`, helpers de estadísticas).
+  - Qué hace el código: define tablas ORM con `flask_sqlalchemy` y métodos de utilidad (p.ej. `DailyStats.get_or_create`, `Stats.get_detection_stats`) que son consultadas desde la web para mostrar estadísticas y actualizar estado de cámaras.
+
+3) Lógica core y detección
+- `control_residuos/core/detection.py`
+  - Ruta: ./control_residuos/core/detection.py
+  - Por qué: contiene la lógica del detector (clase usada por la app web para iniciar/parar detección).
+  - Contenido clave: clase `WasteDetector` (start/stop, draw_detections, get_stats) que utiliza el modelo YOLO.
+  - Qué hace el código (detalle por secciones):
+    - Inicialización: valida `model_path` y `confidence`, carga pesos con `ultralytics.YOLO`, ajusta parámetros (conf, iou, max_det) y prepara estructuras de estadísticas.
+    - start(): comprueba cámara activa, hace una detección de prueba con un frame y arranca un thread que ejecuta `_detection_loop()`.
+    - _detection_loop(): ciclo continuo que obtiene frames procesados, ejecuta inferencia, filtra por confianza, valida bounding boxes, actualiza estadísticas y guarda detecciones en memoria (deque).
+    - draw_detections(): dibuja cuadros y etiquetas en el frame para mostrar en el stream.
+
+- `control_residuos/core/capture_optimized.py` y `camera_manager.py`
+  - Rutas: ./control_residuos/core/capture_optimized.py  y ./control_residuos/core/camera_manager.py
+  - Por qué: gestionar captura de frames desde cámaras (hilos/buffers, resolución/FPS).
+  - Contenido clave: clases/funciones para abrir cámara, leer frames y exponer métodos `start()`, `stop()`, `get_frame()`.
+  - `capture_optimized.py` (qué hace): clase `CameraCapture` que abre la cámara con backends probados, configura resolución/FPS/MJPG, mantiene dos threads (captura y preprocesado), hace frame skip y devuelve frames en bruto o preprocesados para la detección.
+  - `camera_manager.py` (qué hace): clase `CameraManager` que prueba backends, lista cámaras disponibles (probando DirectShow, Media Foundation), elige la mejor opción según FPS y crea/gestiona instancias `CameraCapture`.
+
+4) Web (Flask) — interfaz y APIs
+- `control_residuos/web/app.py`
+  - Ruta: ./control_residuos/web/app.py
+  - Por qué: aplicación Flask principal; define rutas, manejo de sesión y endpoints para cámaras y detección.
+  - Contenido clave: inicializa `db`, `login_manager`, rutas `/cameras`, `/api/cameras/list`, `/api/detection/start`, gestión de `active_cameras` y `active_detectors`.
+  - Qué hace el código (detalles prácticos):
+    - Inicialización: configura `app.config` con `SECRET_KEY` y `SQLALCHEMY_DATABASE_URI`, registra el `login_manager` y llama a `db.init_app(app)`.
+    - Endpoints de cámaras: `/api/cameras/list` usa `CameraCapture`/`CameraManager` para detectar cámaras; `/api/camera/<id>/start` inicia `CameraCapture`, actualiza DB y `active_cameras`.
+    - Detección: `/api/detection/start` crea instancia de `WasteDetector` con `YOLO_MODEL_PATH` y arranca la detección; `/api/camera/<id>/detection/stream` expone un multipart MJPEG con `draw_detections()`.
+
+- `control_residuos/web/camera_list.py`
+  - Ruta: ./control_residuos/web/camera_list.py
+  - Por qué: utilidades para listar/cargar cámaras desde la interfaz (JS llama a estos endpoints).
+  - Qué hace el código: contiene helpers para el front (listas JSON), abstrae llamadas a `CameraManager` y prepara la respuesta que consume `cameras.js`.
+
+- `control_residuos/web/static/` (JS, CSS, icons)
+  - Rutas importantes:
+    - ./control_residuos/web/static/js/cameras.js  (API para iniciar/detener cámaras y actualizar UI)
+    - ./control_residuos/web/static/js/detection.js (control de la detección desde la interfaz)
+    - ./control_residuos/web/static/css/style.css    (estilos generales)
+  - Por qué: scripts y estilos que maneja la UI y las peticiones AJAX hacia `app.py`.
+  - `cameras.js` (qué hace): maneja permisos de cámara en el navegador, solicita `/api/cameras/list`, arranca/detiene cámaras con `/api/camera/<id>/start` y carga el stream en elementos <img>.
+  - `detection.js` (qué hace): inicia/parar detección, llama a `/api/detection/start` y muestra el stream con detecciones en `/api/camera/<id>/detection/stream`; también actualiza estadísticas periódicamente.
+
+- `control_residuos/web/templates/` (HTML) — (ignorar `cameras.html` según lo pedido)
+  - Rutas a revisar para fotos: `./control_residuos/web/templates/dashboard.html`, `login.html`, `detection.html`, `analysis.html`, `config.html`, `base.html`.
+  - Por qué: contienen el menú, las vistas y los elementos que se muestran en pantalla (plantillas Jinja usadas por Flask).
+  - Nota: NO incluir `cameras.html` en la documentación (queda excluida por pedido del equipo).
+
+5) Certificados SSL
+- `control_residuos/ssl/generate_cert.py`
+  - Ruta: ./control_residuos/ssl/generate_cert.py
+  - Por qué: genera certificados locales (mkcert) para que el navegador no bloquee la conexión del puerto de las cámaras.
+  - Contenido clave: `install_mkcert()` y `setup_certificates()` que crean `localhost.pem` y `localhost-key.pem`.
+  - Qué hace el código: prueba si `mkcert` está instalado, instala la CA local y genera `localhost.pem` y `localhost-key.pem`. Sirve para pruebas locales HTTPS/SSL y evitar bloqueos del navegador.
+__________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+
+
+
+                                   -------------RICARDO-------------
+
+
+
+6) Modelo y datasets
+- `datasets/garbage_classification/`
+  - Ruta: ./datasets/garbage_classification/
+  - Por qué: datos usados para entrenar y validar el detector YOLO.
+  - Contenido clave: carpetas `train/`, `val/`, `test/` por clase; archivos `dataset.yaml` y listas de archivos.
+  - Qué contiene y por qué: cada subcarpeta por clase (cardboard, glass, metal, paper, plastic, trash) almacena imágenes; `dataset.yaml` indica rutas y clases para el entrenamiento YOLO. Se usó para buscar la configuración que balanceara resolución vs FPS.
+
+- Modelos entrenados / pesos
+  - Rutas: ./runs/detect/waste_detector3/weights/best.pt  y ./yolov8n.pt  (también hay copia en control_residuos/yolov8n.pt)
+  - Por qué: pesos YOLO usados por `WasteDetector`.
+  - Qué importa: `best.pt` es el peso final seleccionado; `yolov8n.pt` puede ser un backbone preentrenado. `WasteDetector` carga estos archivos para inferencia.
+
+7) Entrenamiento y pruebas
+- `train_model.py`, `test_model.py` (raíz y en `control_residuos/`)
+  - Rutas: ./train_model.py , ./test_model.py , ./control_residuos/test_model.py
+  - Por qué: scripts para entrenar/probar el modelo y encontrar la mejor configuración (resolución vs FPS vs margen de detección).
+  - Qué hacen: scripts que llaman a Ultralytics/YOLO para entrenar y evaluar; permiten experimentar con resolución, batch size y métricas para elegir la configuración estable.
+
+8) Dependencias separadas
+- `control_residuos/requirements/` (dividido por causa de incompatibilidades)
+  - Rutas: ./control_residuos/requirements/base.txt
+            ./control_residuos/requirements/ml.txt
+            ./control_residuos/requirements/dev.txt
+  - Por qué: permitir instalar por bloques (web+db, ML, dev) para evitar conflictos durante la instalación.
+  - Nota práctica: instalar en orden (base -> ml -> dev) evita errores por versiones de torch/opencv/protobuf en máquinas Windows.
+
+9) Scripts de ejecución
+- `run_app.py`, `control_residuos/run.py`, `start_system.bat`, `control_residuos/deploy.bat`
+  - Por qué: comandos y scripts para iniciar la app en desarrollo o desplegarla.
+  - Qué hacen: invocan la app Flask, configuran entorno y autostarten servicios; `start_system.bat` facilita la puesta en marcha en Windows.
+
+10) Resultados y logs
+- `runs/` y `control_residuos/logs/`
+  - Por qué: resultados de entrenamiento (CSV, pesos) y logs de ejecución del sistema.
+  - Qué revisar para fotos: `runs/detect/.../results.csv` (métricas), `runs/detect/.../weights/best.pt` (pesos), `control_residuos/logs/` (logs de ejecución).
+
+Cómo usamos esto en el proyecto (breve)
+- Ajustamos resolución/FPS para maximizar detecciones estables (pruebas en `train_model.py` y `test_model.py`).
+- La app Flask (`web/app.py`) inicia cámaras (usando `core/capture_optimized`) y arranca detectores (`core/detection.py`) que guardan eventos en la BD (`models/models.py`).
+- El certificado local evita que el navegador rechace conexiones por HTTPS en el puerto de cámara.
+
+Detalles importantes 
+- Menú y templates: las plantillas en `web/templates/` contienen la interfaz (barra, dashboard, configuración). Fotografiar `base.html`, `dashboard.html`, `login.html`, `detection.html`, `analysis.html`, `config.html`.
+- SSL: generar `localhost.pem` y `localhost-key.pem` con `control_residuos/ssl/generate_cert.py` para evitar bloqueos del navegador al usar cámaras en localhost.
+- Modelo YOLO: el proyecto usa pesos en `runs/detect/.../weights/best.pt` y/o `yolov8n.pt` — estos archivos son necesarios para la inferencia.
+- Pruebas de detección: se crearon scripts (`train_model.py`, `test_model.py`) para encontrar una configuración estable (resolver trade-off resolución vs FPS vs sensibilidad).
+- Base de datos: `db_admin.py` y `models/models.py` gestionan la creación/validación de la conexión PostgreSQL y las tablas; `settings.py` contiene la URI y credenciales (revisar `.env` para valores reales).
+- Requerimientos: las dependencias se separaron en 3 archivos para evitar conflictos al instalar todo a la vez.
+
+
