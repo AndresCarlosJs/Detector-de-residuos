@@ -165,22 +165,189 @@ Inorgánico:
 ## 🚀 Instalación
 
 ### Requisitos del Sistema
-- Python 3.8+
-- PostgreSQL 12+
-- CUDA 11.0+ (opcional, para GPU)
-- 8GB RAM mínimo
-- 20GB espacio en disco
 
-### Dependencias Principales
+#### Software Requerido
+- Python 3.8+ (3.10 recomendado)
+- PostgreSQL 12+ o Docker
+- Git
+- VS Code (recomendado)
+
+#### Hardware Mínimo
+- CPU: 4 cores, 2.5GHz+
+- RAM: 8GB mínimo (16GB recomendado)
+- Almacenamiento: 20GB SSD
+- GPU: NVIDIA con CUDA (opcional, para mejor rendimiento)
+
+#### Hardware Recomendado (Producción)
+- CPU: 8+ cores, 3.0GHz+
+- RAM: 32GB
+- Almacenamiento: 100GB SSD
+- GPU: NVIDIA RTX 2060 o superior
+
+### Guía de Instalación Paso a Paso
+
+#### 1. Preparación del Sistema
+
+##### Windows
+```powershell
+# 1.1 Instalar Chocolatey (Administrador PowerShell)
+Set-ExecutionPolicy Bypass -Scope Process -Force
+[System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072
+iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+
+# 1.2 Instalar dependencias del sistema
+choco install python310 postgresql git vscode -y
+```
+
+##### Linux (Ubuntu/Debian)
 ```bash
-# Python y entorno virtual
-python -m venv .venv
-source .venv/bin/activate  # Linux/Mac
-.venv\Scripts\activate     # Windows
+# 1.1 Actualizar sistema
+sudo apt update && sudo apt upgrade -y
 
-# Gestión de paquetes
-pip install --upgrade pip
+# 1.2 Instalar dependencias del sistema
+sudo apt install python3.10 python3.10-venv python3-pip postgresql postgresql-contrib git -y
+```
+
+#### 2. Configuración de PostgreSQL
+
+##### Windows
+```powershell
+# 2.1 Iniciar servicio PostgreSQL
+net start postgresql
+
+# 2.2 Crear base de datos (psql)
+createdb control_residuos
+```
+
+##### Linux
+```bash
+# 2.1 Iniciar servicio PostgreSQL
+sudo systemctl start postgresql
+sudo systemctl enable postgresql
+
+# 2.2 Crear base de datos
+sudo -u postgres createdb control_residuos
+```
+
+#### 3. Configuración del Proyecto
+
+```bash
+# 3.1 Clonar repositorio
+git clone https://github.com/AndresCarlosJs/Detector-de-residuos.git
+cd Detector-de-residuos
+
+# 3.2 Crear y activar entorno virtual
+## Windows
+python -m venv .venv
+.venv\Scripts\activate
+
+## Linux/Mac
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 3.3 Actualizar pip y herramientas
+python -m pip install --upgrade pip
 pip install wheel setuptools
+
+# 3.4 Instalar dependencias del proyecto
+pip install -r control_residuos/requirements.txt
+
+# 3.5 Instalar dependencias de desarrollo (opcional)
+pip install -r control_residuos/requirements/dev.txt
+```
+
+#### 4. Configuración del Entorno
+
+```bash
+# 4.1 Copiar archivo de configuración
+cp control_residuos/.env.example control_residuos/.env
+
+# 4.2 Editar variables de entorno
+## Windows
+notepad control_residuos/.env
+
+## Linux
+nano control_residuos/.env
+```
+
+##### Ejemplo de .env
+```ini
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=control_residuos
+DB_USER=postgres
+DB_PASSWORD=your_password
+
+# Application
+DEBUG=True
+SECRET_KEY=your_secret_key
+ALLOWED_HOSTS=localhost,127.0.0.1
+
+# AI Model
+YOLO_CONFIDENCE=0.25
+USE_GPU=False
+```
+
+#### 5. Inicialización del Sistema
+
+```bash
+# 5.1 Inicializar base de datos
+python control_residuos/init_db.py
+
+# 5.2 Cargar datos iniciales
+python control_residuos/init_sample_data.py
+
+# 5.3 Verificar instalación
+python verify_system.py
+```
+
+### Verificación de la Instalación
+
+```bash
+# 1. Probar conexión a base de datos
+python verify_db_connection.py
+
+# 2. Probar detección YOLOv8
+python test_yolo_detection.py
+
+# 3. Probar cámara
+python test_camera_final.py
+```
+
+### Solución de Problemas Comunes
+
+#### Error de PostgreSQL
+```bash
+# Reiniciar servicio PostgreSQL
+## Windows
+net stop postgresql
+net start postgresql
+
+## Linux
+sudo systemctl restart postgresql
+```
+
+#### Error de Permisos
+```bash
+# Ajustar permisos de directorios
+## Windows (Administrador)
+icacls "control_residuos\logs" /grant Users:F
+
+## Linux
+sudo chown -R $USER:$USER control_residuos/logs
+chmod -R 755 control_residuos/logs
+```
+
+#### Error de CUDA
+```bash
+# Verificar instalación CUDA
+python -c "import torch; print(torch.cuda.is_available())"
+
+# Si es False, reinstalar torch con CUDA
+pip uninstall torch torchvision
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu118
+```
 
 ### Dependencias del Proyecto
 
